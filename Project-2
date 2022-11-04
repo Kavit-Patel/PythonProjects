@@ -1,0 +1,236 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Oct 16 15:10:16 2022
+
+@author: Kpatel
+"""
+
+import psycopg2
+
+connection = psycopg2.connect(host='127.0.0.1', port='5432', database='postgres', user='postgres', password='root')
+connection.autocommit = True
+cursor = connection.cursor()
+
+# drop =f'''
+#         drop table contact_list
+# '''
+# cursor.execute(drop)
+
+# create = f'''
+#             create table studenttt(name text,course text)
+# '''
+# cursor.execute(create)
+# std = 'studenttt'
+# dta = 'hi'
+# dtaa = 'hey'
+# select = f'''
+#             select name from studenttt where course = 'daa'
+# '''
+# cursor.execute(select)
+# print(cursor.fetchall())
+
+cursor.execute("select * from information_schema.tables where table_name=%s", ('contact_list',))
+contact_list_table = bool(cursor.rowcount)
+cursor.execute("select * from information_schema.tables where table_name=%s", ('authentication_data',))
+authentication_data_table = bool(cursor.rowcount)
+if contact_list_table == False:
+    create_q = f'''
+                    create table contact_list(Contact_id int,FirstName text,LastName text,Email text,PhoneNumber text)
+    '''
+    cursor.execute(create_q)
+
+if authentication_data_table == False:
+    create_q = f'''
+                    create table authentication_data(username text,password text)
+    '''
+    cursor.execute(create_q)
+def access_granted():
+    print('[ What Do You want to do ? ]')
+    print()
+    print('[view -a] to view all saved contacts')
+    print('[view]    to view a specific contact')
+    print('[add]     to add a new  contact')
+    print('[del]     to delete a contact')
+    print('[update]  to update an existing contact')
+    print('[exit]    to exit the program')
+    
+    user_input = input()
+    if user_input == 'view -a':
+        view_all()
+    if user_input == 'view':
+        view_one()
+    if user_input == 'add':
+        add()
+    if user_input == 'del':
+        delete()
+    elif user_input == 'update':
+        update()
+    elif user_input == 'exit':
+        exit()
+def view_all():
+    select_all = f'''
+                    select * from contact_list
+    '''
+    cursor.execute(select_all)
+    # print(cursor.fetchall())
+    for e in (cursor.fetchall()):
+        print (e)
+def view_one():
+    user = input('Enter Username to access his details : ')
+    select_all = f'''
+                    select * from contact_list where firstname = '{user}'
+    '''
+    cursor.execute(select_all)
+    fetched_user = cursor.fetchall()
+    if len(fetched_user)<1:
+        print('User ',user,' Does Not exixt in Contact_List')
+    else:
+        print(cursor.fetchall())
+def add():
+    insert = f'''
+                insert into contact_list values {int(input('Enter ContactID: ')),input('Enter FirstName: '),input('Enter LastName: '),input('Enter Email: '),input('Enter PhoneNumber: ')}
+    '''
+    cursor.execute(insert)
+    print()
+    print('Contact Added Successfully')
+def delete():
+    user = input('Enter FirstName of user tobe DELETED : ')
+    delete = f'''
+                delete from contact_list where firstname = '{user}'
+    '''
+    cursor.execute(delete)
+    print(user,' is DELETED Successfully')
+def update():
+    user = input('Enter FirstName of user tobe Updated : ')
+    print('What do you want to update ? ')
+    print('[firstname] To update FirstName')
+    print('[lastname] To update LastName')
+    print('[email] To update Email Address')
+    print('[phone] To update Phone Number')
+    print('[id] To update Contact Id')
+    updation = input()
+    if updation == 'firstname':
+        new_firstname =input('Enter New Firstname: ')
+        update = f'''
+                    update contact_list set firstname = '{new_firstname}' where firstname = '{user}'
+        '''
+        cursor.execute(update)
+        print(user,"'s firstname is updated to ",new_firstname)
+    elif updation == 'lastname':
+        new_lastname =input('Enter New Lastname: ')
+        update = f'''
+                    update contact_list set lastname = '{new_lastname}' where firstname = '{user}'
+        '''
+        cursor.execute(update)
+        print(user," 's lastname is updated to ",new_lastname)    
+    elif updation == 'email':
+        new_email =input('Enter New Email Address: ')
+        update = f'''
+                    update contact_list set email = '{new_email}' where firstname = '{user}'
+        '''
+        cursor.execute(update)
+        print(user," 's email address is updated to ",new_email)   
+    elif updation == 'phone':
+        new_phone =input('Enter New Phone Number: ')
+        update = f'''
+                    update contact_list set phonenumber = '{new_phone}' where firstname = '{user}'
+        '''
+        cursor.execute(update)
+        print(user," 's Phone Number is updated to ",new_phone)   
+    elif updation == 'id':
+        new_id =int(input('Enter New Contact Id: '))
+        update = f'''
+                    update contact_list set contact_id = {new_id} where firstname = '{user}'
+        '''
+        cursor.execute(update)
+        print(user," 's Contact ID is updated to ",new_id)   
+        
+def exit():
+    return
+def check_username(username):
+    select = f'''
+                select username from authentication_data where username = '{username}'
+    '''
+    cursor.execute(select)
+    for e in (cursor.fetchall()):
+        for i in e:
+            return i
+
+
+def authentication_insert():
+    username = input('Choose UserName: ')
+    password = input('Choose Password: ')
+    insert = f'''
+                    insert into authentication_data values {username, password}
+    '''
+    if check_username(username) == username:
+        print()
+        print('UserName Already Exist , Please Choose Unique UserName')
+
+        authentication_insert()
+    else:
+        cursor.execute(insert)
+def getting_username():
+    username = input('Enter UserName: ')
+    
+    select = f'''
+                    select username from authentication_data where username = '{username}'
+    '''
+    cursor.execute(select)
+    username_fetched = cursor.fetchall()
+    if len(username_fetched) < 1:
+        print()
+        print("UserName Doesn't exist, Try Re-Login using True UserName ")
+    else:
+        for e in (username_fetched):
+            for i in e:
+                return i
+def getting_password():
+    password = input('Enter Password: ')
+    select = f'''
+                    select password from authentication_data where password = '{password}'
+    '''
+    cursor.execute(select)
+    password_fetched = cursor.fetchall()
+    if len(password_fetched) < 1:
+        print()
+        print("Password is wrong, Try Re-Login using True Password ")
+        return None
+    else:
+        for e in (password_fetched):
+            for i in e:
+                return i
+
+def login():
+    username = getting_username()
+    while username == None:        
+        username = getting_username()
+    password = getting_password()
+    while password == None:
+        password = getting_password()
+    # print(username)
+    # print(password)
+    select = f'''
+                    select username from authentication_data where password = '{password}'
+    '''
+    cursor.execute(select)
+    get_user = cursor.fetchall()
+    # print(get_user)
+    for e in (get_user):
+        for i in e:
+            if username == i:
+                print(username,' Logged In SUCCESSFULLY!')
+                print()
+                access_granted()            
+
+def main():
+    print('New User ? Press 1 for REGISTRATION : ')
+    print('Already Registered ? Press 2 for LOGIN : ')
+    
+    user = int(input())
+    if user == 1:
+            authentication_insert()
+    elif user == 2:
+        login()
+main()
+
